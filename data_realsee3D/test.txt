@@ -1,1 +1,1 @@
-/mnt/xyz_data_tj/user/lizhenjia/2026/Dataset/RealSee_VR/Download/11000000007425/map_eval.json
+11000000007425/map_eval.json
