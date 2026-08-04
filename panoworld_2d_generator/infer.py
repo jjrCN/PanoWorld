@@ -356,7 +356,10 @@ def ensure_geometric_proxy(
     if record.get("geometric_proxy"):
         return str(record["geometric_proxy"])
 
-    sample_dir = generated_control_dir(args, output_dir) / str(record["id"])
+    if record.get("generated_geometric_proxy_dir"):
+        sample_dir = Path(record["generated_geometric_proxy_dir"]).expanduser().resolve()
+    else:
+        sample_dir = generated_control_dir(args, output_dir) / str(record["id"])
     sample_dir.mkdir(parents=True, exist_ok=True)
     proxy_path = sample_dir / "geometric_proxy.png"
     if proxy_path.is_file() and not args.regenerate_geometric_proxy:

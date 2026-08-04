@@ -2,6 +2,8 @@
 set -Eeuo pipefail
 
 CONTROL_MODELS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HF_ENDPOINT="${HF_ENDPOINT:-https://huggingface.co}"
+HF_ENDPOINT="${HF_ENDPOINT%/}"
 
 for command_name in git curl; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
@@ -42,9 +44,16 @@ download_file() {
   fi
 
   mkdir -p "$(dirname "${destination}")"
-  curl -L --fail --show-error --retry 8 --retry-delay 5 --continue-at - \
+  curl -L --fail --show-error --retry 8 --retry-delay 5 --retry-connrefused \
+    --connect-timeout 30 --speed-time 60 --speed-limit 1024 --continue-at - \
     --output "${partial}" "${url}"
   mv "${partial}" "${destination}"
+}
+
+hf_url() {
+  local repo="$1"
+  local file_path="$2"
+  printf "%s/%s/resolve/main/%s?download=true\n" "${HF_ENDPOINT}" "${repo}" "${file_path}"
 }
 
 mkdir -p "${CONTROL_MODELS_DIR}/panosamic" "${CONTROL_MODELS_DIR}/moge"
@@ -66,19 +75,24 @@ clone_repo \
   "https://github.com/cocodataset/panopticapi.git" \
   "${CONTROL_MODELS_DIR}/mmdetection/panopticapi"
 
+MDET_INIT="${CONTROL_MODELS_DIR}/mmdetection/mmdet/__init__.py"
+if [ -f "${MDET_INIT}" ]; then
+  sed -i "s/mmcv_maximum_version = '2.2.0'/mmcv_maximum_version = '2.3.0'/" "${MDET_INIT}"
+fi
+
 cp "${CONTROL_MODELS_DIR}/panosamic/PanoSAMic/config/config_stanford2d3ds_dv.json" \
   "${CONTROL_MODELS_DIR}/panosamic/config_stanford2d3ds_dv.json"
 
 download_file \
-  "https://huggingface.co/dfki-av/PanoSAMic/resolve/main/stanford2d3ds-vith-rgb-fold1/model.safetensors?download=true" \
+  "$(hf_url "dfki-av/PanoSAMic" "stanford2d3ds-vith-rgb-fold1/model.safetensors")" \
   "${CONTROL_MODELS_DIR}/panosamic/stanford2d3ds-vith-rgb-fold1/model.safetensors"
 
 download_file \
-  "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth" \
+  "${SAM_URL:-$(hf_url "ybelkada/segment-anything" "checkpoints/sam_vit_h_4b8939.pth")}" \
   "${CONTROL_MODELS_DIR}/panosamic/sam_vit_h_4b8939.pth"
 
 download_file \
-  "https://huggingface.co/Ruicheng/moge-2-vitl-normal/resolve/main/model.pt?download=true" \
+  "$(hf_url "Ruicheng/moge-2-vitl-normal" "model.pt")" \
   "${CONTROL_MODELS_DIR}/moge/moge-2-vitl-normal/model.pt"
 
 MASK2FORMER_FILE="mask2former_swin-l-p4-w12-384-in21k_16xb1-lsj-100e_coco-panoptic_20220407_104949-82f8d28d.pth"

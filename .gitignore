@@ -16,6 +16,13 @@ model_ckpt/*
 panoworld_2d_generator/models/panoworld_2d_generator/*
 !panoworld_2d_generator/models/panoworld_2d_generator/
 !panoworld_2d_generator/models/panoworld_2d_generator/README.md
-panoworld_2d_generator/models/control_models/*
-!panoworld_2d_generator/models/control_models/
-!panoworld_2d_generator/models/control_models/README.md
+panoworld_2d_generator/models/control_models/**/*.pth
+panoworld_2d_generator/models/control_models/**/*.pt
+panoworld_2d_generator/models/control_models/**/*.safetensors
+panoworld_2d_generator/models/control_models/**/*.ckpt
+panoworld_2d_generator/models/control_models/**/*.bin
+panoworld_2d_generator/models/control_models/**/*.part
+# Downloaded by panoworld_2d_generator/models/control_models/prepare_control_models.sh
+panoworld_2d_generator/models/control_models/panosamic/
+panoworld_2d_generator/models/control_models/moge/
+panoworld_2d_generator/models/control_models/mmdetection/

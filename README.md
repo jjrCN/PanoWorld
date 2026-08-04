@@ -31,7 +31,7 @@ PanoWorld generates consistent whole-house 360-degree panoramas from floorplan-g
 
 ## News
 
-- `Coming soon`: Processed RealSee3D and 3D-FRONT training data will be released in one week.
+- `Coming soon`: Processed RealSee3D and 3D-FRONT training data will be released soon.
 - `2026-08-04`: Released the PanoWorld-v1.0 codebase, including PanoWorld-LRM training/inference, PanoWorld 2D Generator LoRA training/inference, and end-to-end progressive PanoWorld inference.
 - `2026-08-04`: Added one-command scripts, a unified environment, demo manifests under `data_list/`, sample assets under `examples/`, and a lightweight WebGL panorama viewer.
 - `2026-08-04`: Released the PanoWorld 2D Generator LoRA checkpoint on Hugging Face under `model_ckpt/pytorch_lora_weights.safetensors`.
@@ -103,6 +103,8 @@ The corresponding configs are `configs/train_lrm_1024_512.yaml` and `configs/tra
 ```bash
 bash panoworld_2d_generator/models/control_models/prepare_control_models.sh
 ```
+
+If direct Hugging Face access is slow or unavailable, set an alternative endpoint before running the script, for example `HF_ENDPOINT=https://hf-mirror.com bash panoworld_2d_generator/models/control_models/prepare_control_models.sh`.
 
 The script downloads PanoSAMic, MoGe, MMDetection/panopticapi, and their required public checkpoints under `panoworld_2d_generator/models/control_models/`. LRM-only training/inference and 2D Generator LoRA training do not require this step.
 
@@ -189,7 +191,7 @@ We report inference memory and runtime on a single NVIDIA H200 GPU, averaged ove
 | RealSee3D | LRM training/evaluation | [Download](https://github.com/realsee-developer/RealSee3D) |
 | PanoWorld evaluation assets | LRM evaluation examples | [Hugging Face Dataset](https://huggingface.co/datasets/JiaJinrang/PanoWorld) |
 
-Example manifest templates are provided in `examples/`.
+Example manifest templates are provided in `data_list/`, and sample assets are provided in `examples/`.
 
 ## Output
 

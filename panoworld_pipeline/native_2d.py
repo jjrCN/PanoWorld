@@ -134,9 +134,8 @@ class NativePanoramaGenerator:
     def _generated_proxy_path(self, output_dir: Path, sample_id: str) -> Path:
         if self.args.generated_geometric_proxy_dir:
             root = Path(self.args.generated_geometric_proxy_dir).expanduser().resolve()
-        else:
-            root = output_dir / "generated_geometric_proxy"
-        return root / sample_id / "geometric_proxy.png"
+            return root / sample_id / "geometric_proxy.png"
+        return output_dir / "generated_geometric_proxy" / "geometric_proxy.png"
 
     def _control_python_bin(self) -> Optional[str]:
         if self.args.control_python_bin:
@@ -216,6 +215,8 @@ class NativePanoramaGenerator:
             return self._run_control_subprocess(white_model_panorama, output_dir, sample_id)
 
         record = {"id": sample_id, "white_model_panorama": white_model_panorama}
+        if not self.args.generated_geometric_proxy_dir:
+            record["generated_geometric_proxy_dir"] = str(output_dir / "generated_geometric_proxy")
         control_generator = SingleImageControlGenerator(
             build_control_model_paths(self.args),
             build_control_generation_options(self.args),

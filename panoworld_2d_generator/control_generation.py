@@ -652,6 +652,83 @@ class SingleImageControlGenerator:
         sys.path.insert(0, str(require_path(paths.moge_root, "moge_root")))
         import torch
         import utils3d
+        import utils3d.numpy as utils3d_numpy
+        import utils3d.torch as utils3d_torch
+        sys.modules.setdefault("utils3d.np", utils3d_numpy)
+        sys.modules.setdefault("utils3d.pt", utils3d_torch)
+        setattr(utils3d, "np", utils3d_numpy)
+        setattr(utils3d, "pt", utils3d_torch)
+        if not hasattr(utils3d_numpy, "create_icosahedron_mesh"):
+            def _create_icosahedron_mesh():
+                import numpy as _np
+
+                phi = (1.0 + 5.0 ** 0.5) / 2.0
+                vertices = _np.array([
+                    [-1, phi, 0], [1, phi, 0], [-1, -phi, 0], [1, -phi, 0],
+                    [0, -1, phi], [0, 1, phi], [0, -1, -phi], [0, 1, -phi],
+                    [phi, 0, -1], [phi, 0, 1], [-phi, 0, -1], [-phi, 0, 1],
+                ], dtype=_np.float32)
+                vertices /= _np.linalg.norm(vertices, axis=1, keepdims=True)
+                faces = _np.array([
+                    [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
+                    [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
+                    [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
+                    [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1],
+                ], dtype=_np.int32)
+                return vertices, faces
+
+            utils3d_numpy.create_icosahedron_mesh = _create_icosahedron_mesh
+        if not getattr(utils3d_numpy, "_panoworld_moge_compat", False):
+            if not hasattr(utils3d_numpy, "uv_map"):
+                def _uv_map(*size):
+                    if len(size) == 1 and isinstance(size[0], (tuple, list)):
+                        height, width = size[0][:2]
+                    elif len(size) == 2:
+                        height, width = size
+                    else:
+                        raise TypeError("uv_map expects (height, width) or height, width")
+                    return utils3d_numpy.image_uv(height=int(height), width=int(width))
+
+                utils3d_numpy.uv_map = _uv_map
+
+            original_uv_to_pixel = utils3d_numpy.uv_to_pixel
+
+            def _uv_to_pixel_compat(uv, shape=None, width=None, height=None):
+                if shape is not None and width is None and height is None:
+                    if isinstance(shape, (tuple, list)):
+                        height, width = shape[:2]
+                    else:
+                        raise TypeError("shape must be a tuple/list when width and height are omitted")
+                return original_uv_to_pixel(uv, width=width, height=height)
+
+            utils3d_numpy.uv_to_pixel = _uv_to_pixel_compat
+
+            if not hasattr(utils3d_torch, "depth_map_to_point_map"):
+                utils3d_torch.depth_map_to_point_map = utils3d_torch.depth_to_points
+
+            if not hasattr(utils3d_torch, "uv_map"):
+                def _uv_map_torch(*size, device=None, dtype=None):
+                    if len(size) == 1 and isinstance(size[0], (tuple, list)):
+                        height, width = size[0][:2]
+                    elif len(size) == 2:
+                        height, width = size
+                    else:
+                        raise TypeError("uv_map expects (height, width) or height, width")
+                    return utils3d_torch.image_uv(height=int(height), width=int(width), device=device, dtype=dtype)
+
+                utils3d_torch.uv_map = _uv_map_torch
+
+            if not hasattr(utils3d_torch, "sliding_window"):
+                def _sliding_window_torch(x, window_size, stride=1, dim=(-2, -1)):
+                    dims = dim if isinstance(dim, tuple) else (dim,)
+                    win = window_size if isinstance(window_size, tuple) else tuple([window_size] * len(dims))
+                    st = stride if isinstance(stride, tuple) else tuple([stride] * len(dims))
+                    return utils3d_torch.sliding_window_nd(x, window_size=win, stride=st, dim=dims)
+
+                utils3d_torch.sliding_window = _sliding_window_torch
+
+            utils3d_numpy._panoworld_moge_compat = True
+
         from moge.model.v2 import MoGeModel
         from moge.utils.panorama import get_panorama_cameras, split_panorama_image
         from moge.utils.vis import colorize_normal
@@ -717,18 +794,23 @@ class SingleImageControlGenerator:
             device=self.options.device,
             show_progress=False,
         )
+        if hasattr(self._wall_inferencer, "model"):
+            self._wall_inferencer.model.float().eval()
         return self._wall_inferencer
 
     def generate_wall_mask(self, image_path: Path, output_path: Path) -> None:
         import cv2
         import numpy as np
+        import torch
 
         image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
         if image is None:
             raise FileNotFoundError(str(image_path))
         image = cv2.resize(image, self.options.infer_size)
         inferencer = self.load_wall_inferencer()
-        output = inferencer([image], batch_size=1, show=False)
+        device_type = "cuda" if str(self.options.device).startswith("cuda") and torch.cuda.is_available() else "cpu"
+        with torch.autocast(device_type=device_type, enabled=False):
+            output = inferencer([image], batch_size=1, show=False)
         prediction = output["predictions"][0]
         wall_mask = (prediction["panoptic_seg"][:, :, 0] == self.options.wall_id).astype(np.uint8) * 255
         output_path.parent.mkdir(parents=True, exist_ok=True)
