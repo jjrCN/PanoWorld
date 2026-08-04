@@ -1,0 +1,74 @@
+model:
+  class_name: panoworld_lrm.lrm_train_model.PanoWorldLRMTraining
+  patch_factor: 2
+  dim1: 256
+  dim2: 512
+  dim3: 1024
+  num_register_tokens: 4
+  head_dim: 64
+  inter_multi: 4
+  qk_norm: true
+  stage1_nlayer: 2
+  stage2_nlayer: 4
+  stage3_nlayer: 8
+  patch_size: 8
+  in_channels: 12
+  output_gs: false
+  gaussians:
+    sh_degree: 1
+    opacity_degree: 2
+    near_plane: 0.01
+    far_plane: 1000000.0
+    scale_bias: -6.9
+    scale_max: -1.2
+    opacity_bias: -2.0
+    align_to_pixel: true
+    max_dist: 15.0
+    min_dist: 0.1
+
+data:
+  root_data_dir: ["/path/to/front3d_train_data_dir", "/path/to/realsee3d_train_data_dir"]
+  data_path: ["data_list/data_front3d/front3d_train.txt", "data_list/data_realsee3d/realsee3D_train.txt"]
+  square_crop: true
+  resize_h: 1024
+  resize_h_pano: 1024
+  input_frame_select_type: random_whole_room
+  whole_room_rate: 0.5
+  target_frame_select_type: random
+  num_input_frames: -1
+  num_target_frames: 0
+  absoluate_max_num_input_frames: 5
+  sample_target_images: 6
+
+training:
+  seed: 777
+  use_amp: true
+  use_tf32: true
+  amp_dtype: bf16
+  use_wandb: false
+  batch_size_per_gpu: 1
+  grad_accum_steps: 4
+  warmup: 3000
+  weight_decay: 0.05
+  beta1: 0.9
+  beta2: 0.95
+  lr: 0.0002
+  train_steps: 50000
+  train_stage: 2
+  dataset_name: panoworld_lrm.lrm_train_dataset.Dataset
+  checkpoint_dir: ./outputs/panoworld_lrm/checkpoints/2048_1024
+  checkpoint_every: 3000
+  grad_clip_norm: 0.0
+  grad_checkpoint_every: 1
+  l2_loss_weight: 1.0
+  lpips_loss_weight: 0.0
+  perceptual_loss_weight: 0.2
+  depth_loss_weight: 10.0
+  depth_render_loss_weight: 0.0
+  num_threads: 2
+  num_workers: 2
+  prefetch_factor: 2
+  print_every: 10
+  wandb_exp_name: panoworld_lrm_2048_1024
+  wandb_log_every: 10
+  wandb_project: PanoWorld-LRM

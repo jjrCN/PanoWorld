@@ -1,5 +1,5 @@
 model:
-  class_name: model.PanoWorldLRM
+  class_name: panoworld_lrm.model.PanoWorldLRM
 
   patch_factor: 2
   dim1: 256
@@ -30,8 +30,11 @@ model:
 
 data:
   root_data_dir: "/Your/Path/to/RealSee3D_eval_data"
-  data_path: "data_realsee3D/realsee3D_eval_8views.txt"
-  # data_path: "data_realsee3D/realsee3D_eval_12views.txt"
+  data_path: "data_list/data_realsee3d/realsee3D_eval_8views.txt"
+  # data_path: "data_list/data_realsee3d/realsee3D_eval_12views.txt"
+  panoworld_mode: false
+  pano_image_name: panoImage_1600.jpg
+  panoworld_start_image: panoImage_1600.jpg
   square_crop: true # Whether to crop perspective images to a square before resizing
   resize_h: 512
   resize_h_pano: 512
@@ -43,13 +46,15 @@ training:
   train_stage: 1 # 1: 1024x512, 2: 2048x1024
 
 inference:
-  dataset_name: dataset.Dataset
+  dataset_name: panoworld_lrm.dataset.Dataset
   amp_dtype: bf16
-  use_amp: true  
+  use_amp: true
   batch_size_per_gpu: 1
   num_threads: 8
   num_workers: 4
-  prefetch_factor: 4  
+  prefetch_factor: 4
   use_tf32: true
-  ckpt_path: /Path/to/ckpt_panoworld_lrm_1024_512.pt
+  ckpt_path: model_ckpt/ckpt_panoworld_lrm_1024_512.pt
   out_dir: ./inference_result/inference_1024_512_8views
+  eval_metrics: true
+  lpips_network: vgg

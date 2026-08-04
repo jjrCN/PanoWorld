@@ -1,0 +1,8 @@
+# The released 2D Generator uses the same unified PanoWorld environment as
+# the LRM and full pipeline. Install from the repository root:
+#
+#   pip install -r requirements.txt
+#
+# This file intentionally forwards to the root requirements for users who run
+# pip from inside panoworld_2d_generator/.
+-r ../requirements.txt

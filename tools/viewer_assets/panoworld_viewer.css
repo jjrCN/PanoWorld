@@ -1,0 +1,381 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #050505;
+  color: #f8fafc;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.pano-tour-stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  min-width: 320px;
+  background: linear-gradient(180deg, #0b1220, #101a2c);
+  cursor: grab;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.pano-tour-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.pano-tour-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.pano-tour-hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.pano-tour-hotspot-button {
+  position: absolute;
+  width: 3.6rem;
+  height: 3.6rem;
+  transform: translate(-50%, -50%) scale(var(--pano-hotspot-scale, 1));
+  transform-origin: center center;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.16s ease;
+}
+
+.pano-tour-hotspot-button[hidden] {
+  display: none;
+}
+
+.pano-tour-hotspot-ring,
+.pano-tour-hotspot-core {
+  position: absolute;
+  inset: 50%;
+  display: block;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
+.pano-tour-hotspot-ring {
+  background: transparent;
+  animation: pano-hotspot-pulse 1.8s ease-in-out infinite;
+}
+
+.pano-tour-hotspot-ring--outer {
+  width: 2.86rem;
+  height: 2.86rem;
+  border: 2px solid rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 0 0 0.14rem rgba(122, 211, 255, 0.14),
+    0 0 18px rgba(122, 211, 255, 0.48);
+}
+
+.pano-tour-hotspot-ring--inner {
+  width: 1.66rem;
+  height: 1.66rem;
+  border: 2px solid rgba(255, 255, 255, 0.82);
+  box-shadow: 0 0 12px rgba(122, 211, 255, 0.22);
+  animation-delay: -0.2s;
+}
+
+.pano-tour-hotspot-core {
+  width: 0.52rem;
+  height: 0.52rem;
+  border: 2px solid rgba(255, 255, 255, 0.98);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.78);
+}
+
+.pano-tour-hotspot-button:hover,
+.pano-tour-hotspot-button:focus-visible {
+  transform: translate(-50%, -50%) scale(calc(var(--pano-hotspot-scale, 1) * 1.08));
+  outline: none;
+}
+
+.pano-tour-hotspot-button:hover .pano-tour-hotspot-ring--outer,
+.pano-tour-hotspot-button:focus-visible .pano-tour-hotspot-ring--outer {
+  border-color: rgb(255, 216, 140);
+  box-shadow:
+    0 0 0 0.2rem rgba(255, 216, 140, 0.18),
+    0 0 22px rgba(255, 216, 140, 0.62);
+}
+
+.pano-tour-hotspot-button:hover .pano-tour-hotspot-ring--inner,
+.pano-tour-hotspot-button:focus-visible .pano-tour-hotspot-ring--inner {
+  border-color: rgba(255, 216, 140, 0.92);
+  box-shadow: 0 0 14px rgba(255, 216, 140, 0.34);
+}
+
+.pano-tour-hotspot-button:hover .pano-tour-hotspot-core,
+.pano-tour-hotspot-button:focus-visible .pano-tour-hotspot-core {
+  border-color: rgb(255, 216, 140);
+  background: rgba(255, 216, 140, 0.14);
+  box-shadow: 0 0 14px rgba(255, 216, 140, 0.72);
+}
+
+@keyframes pano-hotspot-pulse {
+  0%,
+  100% {
+    opacity: 0.96;
+  }
+  50% {
+    opacity: 0.66;
+  }
+}
+
+.pano-tour-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 13, 24, 0.58);
+  color: #f4f7fb;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.pano-tour-loading.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.pano-tour-spinner {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.22);
+  border-top-color: #ffffff;
+  animation: pano-spin 0.85s linear infinite;
+}
+
+@keyframes pano-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pano-tour-hud {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.pano-tour-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(18px, 2.1vw, 28px);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+}
+
+.pano-tour-badge {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  color: #e5e7eb;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pano-tour-stage-actions {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+}
+
+.pano-tour-control {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 18px;
+  line-height: 36px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.pano-tour-control:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pano-tour-control:active {
+  transform: scale(0.96);
+}
+
+.pano-tour-fov-label {
+  min-width: 72px;
+  padding: 0 8px;
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pano-tour-strip {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  z-index: 7;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  max-width: min(92vw, 920px);
+  overflow-x: auto;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35);
+  scrollbar-width: none;
+}
+
+.pano-tour-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.pano-tour-chip {
+  min-width: 58px;
+  width: auto;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.pano-tour-chip.is-active {
+  background: #f8fafc;
+  color: #111827;
+}
+
+.pano-tour-tooltip {
+  position: absolute;
+  z-index: 9;
+  transform: translate(-50%, calc(-100% - 1.05rem));
+  padding: 0.44rem 0.64rem;
+  border-radius: 999px;
+  background: rgba(8, 16, 28, 0.84);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+}
+
+.pano-tour-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 82px;
+  z-index: 6;
+  transform: translateX(-50%);
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .pano-tour-hud {
+    left: 12px;
+    top: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .pano-tour-stage-actions {
+    right: 12px;
+    top: 12px;
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .pano-tour-fov-label {
+    display: none;
+  }
+
+  .pano-tour-control {
+    width: 34px;
+    height: 34px;
+    line-height: 34px;
+  }
+
+  .pano-tour-hotspot-button {
+    width: 3.2rem;
+    height: 3.2rem;
+  }
+
+  .pano-tour-hotspot-ring {
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+
+  .pano-tour-hint {
+    bottom: 76px;
+    max-width: calc(100vw - 28px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pano-tour-strip {
+    bottom: 16px;
+    max-width: calc(100vw - 20px);
+  }
+}

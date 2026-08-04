@@ -1,0 +1,89 @@
+model:
+  class_name: panoworld_lrm.model.PanoWorldLRM
+  patch_factor: 2
+  dim1: 256
+  dim2: 512
+  dim3: 1024
+  num_register_tokens: 4
+  head_dim: 64
+  inter_multi: 4
+  qk_norm: true
+  stage1_nlayer: 2
+  stage2_nlayer: 4
+  stage3_nlayer: 8
+  patch_size: 2
+  in_channels: 12
+  output_gs: true
+  gaussians:
+    sh_degree: 1
+    opacity_degree: 2
+    near_plane: 0.01
+    far_plane: 1000000.0
+    scale_bias: -6.9
+    scale_max: -1.2
+    opacity_bias: 1.0
+    align_to_pixel: true
+    max_dist: 15.0
+    min_dist: 0.1
+
+data:
+  root_data_dir: examples/full_pipeline_demo_datas
+  data_path: data_list/data_demo_data/demo.txt
+  panoworld_mode: true
+  panoworld_start_image: panoImage_2048_franch.png
+  pano_image_name: panoImage_2048.png
+  panoworld_prompt: "Soft, diffused natural light from a large window on one side gently fills the space with even illumination, where shadows are faint and low-contrast, creating a calm and airy atmosphere. The light has a warm, golden-hour temperature, casting subtle highlights on surfaces. The overall mood is serene, tranquil, and contemplative—quiet and uncluttered, evoking a sense of stillness and mindfulness with no visual distractions, allowing a peaceful, meditative quality to prevail. Surfaces are smooth yet tactile with a matte finish, and the image carries a slight, natural grain reminiscent of film photography that adds organic richness. Materials appear soft to the touch: fabric with a gentle nap, polished stone with a cool feel, and lightly brushed metal. The overall texture is refined but not glossy, with subtle variations in tone across flat areas."
+  square_crop: true
+  resize_h: 1024
+  resize_h_pano: 1024
+  sample_target_images: 6
+  viewpoint_max_view: 8
+  filter_top_down: false
+
+training:
+  train_stage: 2
+
+inference:
+  dataset_name: panoworld_lrm.dataset.Dataset
+  amp_dtype: bf16
+  use_amp: true
+  batch_size_per_gpu: 1
+  num_threads: 8
+  num_workers: 0
+  prefetch_factor: 4
+  use_tf32: true
+  ckpt_path: ./model_ckpt/ckpt_panoworld_lrm_2048_1024.pt
+  out_dir: ./inference_result/panoworld_demo
+
+generator:
+  base_model: ./model_ckpt/Qwen-Image-Edit-2509
+  panoworld_lora: ./model_ckpt/pytorch_lora_weights.safetensors
+  panoworld_weight_name: null
+  lightning_lora: ./model_ckpt/Qwen-Image-Lightning-4steps-V2.0-bf16.safetensors
+  lightning_weight_name: null
+  disable_lightning: false
+  num_inference_steps: 6
+  panoworld_scale: 1.0
+  lightning_scale: 1.0
+  true_cfg_scale: 1.0
+  guidance_scale: 1.0
+  max_sequence_length: 512
+  precision: bf16
+  device: cuda
+  cpu_offload: true
+  seed: 0
+  condition_order: training
+  pad_ratio: 0.125
+  inputs_unpadded: true
+  keep_padding: false
+  local_files_only: true
+  generated_geometric_proxy_dir: null
+  regenerate_geometric_proxy: false
+  regenerate_control_assets: false
+  control_python_bin: null
+  control_model_root: ./panoworld_2d_generator/models/control_models
+  control_device: cuda
+  control_width: 2048
+  control_height: 1024
+  normal_batch_size: 12
+  wall_batch_size: 4

@@ -11,175 +11,182 @@
 <p align="center">
   <a href="https://arxiv.org/abs/2605.17916"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2605.17916-b31b1b.svg"></a>
   <a href="https://jjrcn.github.io/PanoWorld-project-home/"><img alt="Project Page" src="https://img.shields.io/badge/Project-Page-2f80ed.svg"></a>
-  <a href="https://huggingface.co/spaces/JiaJinrang/PanoWorld-LRM"><img alt="PanoWorld-LRM Space" src="https://img.shields.io/badge/HF%20Space-PanoWorld--LRM-f59e0b.svg"></a>
-  <a href="https://huggingface.co/spaces/JiaJinrang/PanoWorld-VR-Tour"><img alt="PanoWorld-VR-Tour Space" src="https://img.shields.io/badge/HF%20Space-VR--Tour-fbbf24.svg"></a>
   <a href="https://huggingface.co/JiaJinrang/PanoWorld/tree/main"><img alt="Model" src="https://img.shields.io/badge/Model-HuggingFace-f97316.svg"></a>
   <a href="https://huggingface.co/datasets/JiaJinrang/PanoWorld"><img alt="Dataset" src="https://img.shields.io/badge/Dataset-HuggingFace-10b981.svg"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a>
 </p>
 
-PanoWorld is a generative spatial world model for consistent whole-house panorama synthesis. Given a floorplan and a style reference, it autoregressively generates node-based 360-degree panoramas that align with practical VR-tour navigation while preserving cross-view geometry and material consistency across an entire house.
-
-This repository currently releases the **PanoWorld-LRM inference code**, together with model checkpoints and evaluation data links. More components of the full PanoWorld pipeline will be released progressively.
+PanoWorld generates consistent whole-house 360-degree panoramas from floorplan-guided viewpoints and a style reference. The pipeline couples high-fidelity 2D panorama generation with an explicit renderable 3DGS memory state reconstructed by PanoWorld-LRM.
 
 <p align="center">
   <img src="assets/panoworld.png" alt="PanoWorld main figure" width="95%">
 </p>
 
-## Overview
+## What Is Included
 
-- Whole-house synthesis is formulated as autoregressive generation over discrete panorama viewpoints, matching real VR-tour navigation.
-- A floorplan-derived 3D shell provides global structural guidance for multi-room layout consistency.
-- A dynamic 3DGS cache serves as renderable spatial memory, preserving cross-node geometry and material identity.
-- PanoWorld-LRM reconstructs metric-scale multi-room geometry from panoramic observations for high-quality whole-house rendering and evaluation.
+- **PanoWorld-LRM inference**: multi-view panoramic LRM reconstruction and 3DGS export.
+- **PanoWorld-LRM training**: DDP training code with image, perceptual, opacity, and position-depth supervision.
+- **PanoWorld 2D Generator training/inference**: LoRA training and native Diffusers inference based on Qwen-Image-Edit.
+- **Full PanoWorld inference**: progressive multi-node generation using LRM renders plus the 2D Generator in one Python pipeline.
 
 ## News
 
+- `Coming soon`: Processed RealSee3D and 3D-FRONT training data will be released in one week.
+- `2026-08-04`: Released the PanoWorld-v1.0 codebase, including PanoWorld-LRM training/inference, PanoWorld 2D Generator LoRA training/inference, and end-to-end progressive PanoWorld inference.
+- `2026-08-04`: Added one-command scripts, a unified environment, demo manifests under `data_list/`, sample assets under `examples/`, and a lightweight WebGL panorama viewer.
+- `2026-08-04`: Released the PanoWorld 2D Generator LoRA checkpoint on Hugging Face under `model_ckpt/pytorch_lora_weights.safetensors`.
+- `2026-07-20`: PanoWorld has been **conditionally accepted as a Conference Paper to SIGGRAPH Asia 2026**. 🎉🎉🎉
+- `2026-05-25`: Open-sourced the PanoWorld-LRM inference code, `1024x512` and `2048x1024` checkpoints, and RealSee3D evaluation data.
 - `2026-05-19`: Paper released and project page launched.
-- `2026-05-25`: Open-sourced the PanoWorld-LRM inference code, checkpoints (including `1024x512` and `2048x1024` model weights), and evaluation data (`50` RealSee3D scenes).
-- `Coming Soon`: PanoWorld 2D generator inference code and checkpoints.
-- `Coming Soon`: Full PanoWorld pipeline, visualization, and evaluation code.
-- `Coming Soon`: Private scene data for evaluating PanoWorld panorama synthesis.
-- `Coming Soon`: PanoWorld-LRM training code.
-- `Coming Soon`: PanoWorld 2D generator training code.
 
-## Inference
-
-### Quick Start
-
-#### PanoWorld-LRM
-
-1. Install dependencies:
+## Installation
 
 ```bash
+git clone https://github.com/jjrCN/PanoWorld.git
+cd PanoWorld
 pip install -r requirements.txt
 ```
 
-The released inference package is tested with
-`Python 3.10.18`, `PyTorch 2.3.1`, `TorchVision 0.18.1`, and `CUDA 12.1`.
+The whole repository uses one environment for PanoWorld-LRM and the 2D Generator. The fixed `requirements.txt` has been validated with Python 3.10, CUDA 12.1, and NVIDIA H200/A100-class GPUs.
 
-2. Download the prepared RealSee3D inference and evaluation data ([Download](https://huggingface.co/datasets/JiaJinrang/PanoWorld/tree/main)):
+## Checkpoints
 
-3. Check the selected config and update `data.root_data_dir`, `data.data_path`, `inference.ckpt_path`, and `inference.out_dir` if needed.
+Download released checkpoints from [JiaJinrang/PanoWorld](https://huggingface.co/JiaJinrang/PanoWorld/tree/main) and place them under `model_ckpt/` or override the paths in YAML configs.
 
-4. Launch inference with one of the provided scripts:
+| Component | Default Path |
+| --- | --- |
+| PanoWorld-LRM 1024x512 | `model_ckpt/ckpt_panoworld_lrm_1024_512.pt` |
+| PanoWorld-LRM 2048x1024 | `model_ckpt/ckpt_panoworld_lrm_2048_1024.pt` |
+| Qwen-Image-Edit-2509 base model | `model_ckpt/Qwen-Image-Edit-2509` |
+| PanoWorld 2D Generator LoRA | `model_ckpt/pytorch_lora_weights.safetensors` |
+| Qwen-Image-Lightning LoRA | `model_ckpt/Qwen-Image-Lightning-4steps-V2.0-bf16.safetensors` |
+
+All default configs use these relative paths. Users only need to place the files under `model_ckpt/` or create symlinks with the same names.
+
+## One-Command Scripts
+
+### PanoWorld-LRM Inference
 
 ```bash
-bash infer_1024_512.sh
+bash scripts/infer_lrm_1024_512.sh
+bash scripts/infer_lrm_2048_1024.sh
 ```
 
-or
+Update `data.root_data_dir`, `data.data_path`, `inference.ckpt_path`, and `inference.out_dir` in the selected config before running.
+After inference, the scripts automatically report the mean PSNR, SSIM, and LPIPS over all exported GT/rendered panorama pairs.
+
+### PanoWorld-LRM Training
 
 ```bash
-bash infer_2048_1024.sh
+NUM_GPUS=8 bash scripts/train_lrm_1024_512.sh
+NUM_GPUS=8 bash scripts/train_lrm_2048_1024.sh
 ```
 
-You can also run inference directly with:
-
-```bash
-python inference.py --config configs/inference_1024_512.yaml
-```
-
-5. If you would like to run inference on your own data, please refer to the dataset format description ([Here](https://huggingface.co/datasets/JiaJinrang/PanoWorld)):
-
-You may reorganize your own data into the same format. Inference only depends on the panoramic image `panoImage_1600.jpg`, the camera extrinsics `extrinsics.txt`, and the viewpoint-to-room grouping defined in `map.json`. Organize your data as follows:
+The corresponding configs are `configs/train_lrm_1024_512.yaml` and `configs/train_lrm_2048_1024.yaml`. Set `data.root_data_dir` to the processed training-data root, or a list of roots, and set `data.data_path` to the matching manifest path, or list of manifest paths. Each line in a manifest is a relative scene entry such as `scene_000001/map.json`, following the same convention as `data_list/data_realsee3d/realsee3D_train.txt`. The panorama depth and depth scale are read from the current scene directory:
 
 ```text
-<your_data_root>
-  <scene_name1>
-    map.json
-    viewpoints
-      <view_name1>
-        panoImage_1600.jpg   # panorama image, w:h = 2:1; the resolution is not strictly limited to 1600x800
-        extrinsics.txt       # 4x4 camera extrinsic matrix (c2w) for this viewpoint
-      <view_name2>
-        panoImage_1600.jpg   # panorama image, w:h = 2:1
-        extrinsics.txt       # 4x4 camera extrinsic matrix (c2w) for this viewpoint
-      <view_name3>
-        panoImage_1600.jpg   # panorama image, w:h = 2:1
-        extrinsics.txt       # 4x4 camera extrinsic matrix (c2w) for this viewpoint
-      <view_name4>
-        panoImage_1600.jpg   # panorama image, w:h = 2:1
-        extrinsics.txt       # 4x4 camera extrinsic matrix (c2w) for this viewpoint
-      ...
-  <scene_name2>
-  <scene_name3>
-  ...
+<scene>
+  map.json
+  viewpoints
+    <view>
+      panoImage_2048.png
+      depth_image.png
+      depth_scale.txt
+      extrinsics.txt
+      transforms.json
 ```
 
-Create a TXT file listing the scenes to be processed in the same format as `realsee3D_eval_8views.txt`, then set `config.data.root_data_dir` and `config.data.data_path` accordingly.
-
-6. The inference results will be saved in `inference.out_dir`. The `output_ply` directory can be directly visualized with `SIBR_Viewer`:
+### PanoWorld 2D Generator
 
 ```bash
-./SIBR_gaussianViewer_app -m /Path/to/output_ply
+DATA_ROOT=/path/to/front3d_train_data bash scripts/train_2d_generator.sh
+bash scripts/infer_2d_generator.sh
 ```
 
-You may also use other viewers such as `SuperSplat`.
+The default 2D training manifest is `data_list/data_front3d/train_2d_generator.jsonl`. Because the manifest stores paths relative to the processed training-data root, set `DATA_ROOT` or `TRAIN_DATA_ROOT` before launching training. The default 2D inference manifest is `data_list/data_demo_data/inference_2d_generator.jsonl`, and outputs are written to `./outputs/2d_generator_demo`. Set `MANIFEST` and `OUTPUT_DIR` to override inference. The JSONL manifest format is documented in `panoworld_2d_generator/README.md`. The checkpoint-compatible condition order is:
 
-<p align="center"><strong>Inference GPU Memory Usage</strong></p>
+```text
+visual_memory, geometric_proxy, style_reference
+```
 
-<table align="center">
-  <thead>
-    <tr>
-      <th align="center"></th>
-      <th align="center">1024x512</th>
-      <th align="center">2048x1024</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center">8-views</td>
-      <td align="center">27507MiB</td>
-      <td align="center">108369MiB</td>
-    </tr>
-    <tr>
-      <td align="center">12-views</td>
-      <td align="center">40285MiB</td>
-      <td align="center">OOM</td>
-    </tr>
-  </tbody>
-</table>
+When a white-model panorama is used as geometry control, it is first converted
+into a `geometric_proxy`; the raw `place_image.png` is not fed directly to
+Qwen-Image.
 
-<p align="center"><sub><em>Tested on NVIDIA H200. The paper uses <code>1024x512</code> for experiments and metric computation.</em></sub></p>
+### Full PanoWorld Multi-Node Inference
 
-#### PanoWorld 2D Generator
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-Coming Soon
+All released entry points use this same environment. They first check
+`PANOWORLD_PYTHON`, then `${repo}/.venv/bin/python`, and finally the current
+shell `python`.
 
-#### PanoWorld
+```bash
+bash scripts/infer_panoworld.sh
+```
 
-Coming Soon
+`configs/inference_panoworld.yaml` enables `data.panoworld_mode=true` and directly connects LRM inference with the native 2D Generator. For each target node, the full pipeline prepares three image conditions for the 2D Generator:
 
-### Released Files
+You can switch between the three provided target styles by setting `data.panoworld_start_image` to `panoImage_2048_franch.png`, `panoImage_2048_simple.png`, or `panoImage_2048_chinese.png`. You can also use other image-to-image models to create additional start panoramas in new styles and use them as the first image for subsequent node generation.
 
-- `inference.py`: main inference entrypoint
-- `model.py`, `transformer.py`, `dpt_head.py`, `prope_custom.py`: model definition
-- `dataset.py`, `utils.py`, `metric_utils.py`: dataset loading and evaluation helpers
-- `configs/`: released inference configs for `1024x512` and `2048x1024`
-- `data_realsee3D/`: released RealSee3D evaluation file lists
+- `visual_memory`: the masked LRM memory render at the target viewpoint, used as cross-node appearance and layout memory.
+- `geometric_proxy`: the geometric control image converted from the shell-rendered `place_image.png`, used to constrain room structure and furniture layout.
+- `style_reference`: the nearest completed panorama or the start panorama, used to transfer the target visual style.
 
-## Model Checkpoints
+The full-pipeline scene format follows the LRM format and additionally requires `place_image.png`, `place_depth.png`, and `place_depth_scale.txt` under each viewpoint directory.
 
-| Component | Resolution | Link | Notes |
-| --- | --- | --- | --- |
-| PanoWorld-LRM | `1024x512` | [Checkpoint](https://huggingface.co/JiaJinrang/PanoWorld/blob/main/model_ckpt/ckpt_panoworld_lrm_1024_512.pt) | Released |
-| PanoWorld-LRM | `2048x1024` | [Checkpoint](https://huggingface.co/JiaJinrang/PanoWorld/blob/main/model_ckpt/ckpt_panoworld_lrm_2048_1024.ckpt) | Released |
-| PanoWorld 2D Generator | Coming Soon | Coming Soon | Coming Soon |
+### Panorama Viewer
+
+```bash
+bash scripts/visualize_panoworld.sh examples/full_pipeline_demo_datas/scene0000/viewpoints
+```
+
+The viewer starts a lightweight WebGL service for generated panoramas in a `viewpoints` directory. By default it binds to `0.0.0.0:8003`, enumerates the server's reachable hostnames/IP addresses, and prints browser URLs such as `http://<server-ip>:8003/`.
+
+```bash
+PORT=8004 bash scripts/visualize_panoworld.sh /path/to/viewpoints
+```
+
+If your platform provides a public hostname or proxy address, pass it explicitly so the printed URL is exact:
+
+```bash
+PUBLIC_HOST=my-server.example.com bash scripts/visualize_panoworld.sh /path/to/viewpoints
+```
+
+## Inference Cost
+
+We report inference memory and runtime on a single NVIDIA H200 GPU, averaged over 50 runs.
+
+| Module | Views | Resolution | Memory | Time |
+| --- | ---: | --- | ---: | ---: |
+| PanoWorld-LRM | 1 | 1024x512 | 6143 MiB | 0.17s |
+| PanoWorld-LRM | 1 | 2048x1024 | 18823 MiB | 2.30s |
+| PanoWorld-LRM | 8 | 1024x512 | 27507 MiB | 1.45s |
+| PanoWorld-LRM | 8 | 2048x1024 | 108369 MiB | 20.53s |
+| PanoWorld-LRM | 12 | 1024x512 | 40285 MiB | 2.28s |
+| PanoWorld-LRM | 12 | 2048x1024 | OOM | OOM |
+| PanoWorld-DiT | - | 1024x512 | 46742 MiB | 11.00s |
 
 ## Data
 
-| Split | Dataset | Usage | Link | Notes |
-| --- | --- | --- | --- | --- |
-| Training | 3D Front | Train LRM and 2D generator | [Download](https://tianchi.aliyun.com/dataset/65347) | Data processing scripts: Coming Soon |
-| Training | RealSee3D | Train LRM and 2D generator | [Download](https://github.com/realsee-developer/RealSee3D) | Data processing scripts: Coming Soon |
-| Training | Private 2D panoramas | 2D generator only | - | Private |
-| Evaluation | RealSee3D | Evaluate LRM | [Download](https://huggingface.co/datasets/JiaJinrang/PanoWorld/tree/main) | Released, including `50` RealSee3D scenes |
-| Evaluation | Private scene data | Evaluate PanoWorld panorama synthesis | Coming Soon | Coming Soon |
+| Data | Usage | Link |
+| --- | --- | --- |
+| 3D-FRONT | LRM and 2D Generator training | [Download](https://tianchi.aliyun.com/dataset/65347) |
+| RealSee3D | LRM training/evaluation | [Download](https://github.com/realsee-developer/RealSee3D) |
+| PanoWorld evaluation assets | LRM evaluation examples | [Hugging Face Dataset](https://huggingface.co/datasets/JiaJinrang/PanoWorld) |
+
+Example manifest templates are provided in `examples/`.
+
+## Output
+
+- **LRM inference** writes rendered target views, depth maps, and an `output_ply` directory under `inference.out_dir`.
+- **Full PanoWorld inference** writes intermediate LRM memory renders and final generated panoramas back to the original viewpoint directories. Its multi-node `output_ply` directories are written under `inference.out_dir` and can be opened with SIBR Viewer or SuperSplat.
 
 ## Citation
-
-If you find this project useful, please cite:
 
 ```bibtex
 @misc{jia2026panoworldgenerativespatialworld,
@@ -195,10 +202,8 @@ If you find this project useful, please cite:
 
 ## License
 
-This project is released under the Apache 2.0 License. See [LICENSE](LICENSE) for details.
-
-Third-party code included in this repository may retain its original license notices. For example, `prope_custom.py` preserves the upstream MIT license notice from its original authors.
+This project is released under the Apache 2.0 License. Third-party code included in this repository keeps its original license notices.
 
 ## Acknowledgements
 
-We would like to thank [Gynjn/MVP](https://github.com/Gynjn/MVP), [QwenLM/Qwen-Image](https://github.com/QwenLM/Qwen-Image), [realsee-developer/RealSee3D](https://github.com/realsee-developer/RealSee3D), and [3D Front](https://tianchi.aliyun.com/dataset/65347) for their inspiring open-source contributions.
+We thank [QwenLM/Qwen-Image](https://github.com/QwenLM/Qwen-Image), [MVP](https://github.com/Gynjn/MVP), [RealSee3D](https://github.com/realsee-developer/RealSee3D), and [3D-FRONT](https://tianchi.aliyun.com/dataset/65347) for their open-source contributions.
