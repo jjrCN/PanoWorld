@@ -1,37 +1,53 @@
-# Control Models
+# Control models
 
-Default layout expected by `panoworld_2d_generator.control_generation`:
+The open-source repository contains only these files initially:
+
+```text
+control_models/
+  README.md
+  panorama_normal.py
+  prepare_control_models.sh
+```
+
+`panorama_normal.py` is PanoWorld's panorama-normal fusion implementation. The downloaded MoGe repository remains unchanged.
+
+## Download
+
+Run the preparation script on a machine with internet access:
+
+```bash
+cd panoworld_2d_generator/models/control_models
+bash prepare_control_models.sh
+```
+
+The script downloads the public repositories and weights used by `control_generation.py`:
+
+- PanoSAMic and its Stanford2D3DS RGB fold-1 checkpoint;
+- Meta SAM ViT-H;
+- MoGe and `moge-2-vitl-normal`;
+- MMDetection v3.3.0, COCO panopticapi, and Mask2Former Swin-L COCO-Panoptic.
+
+After preparation, the directory contains:
 
 ```text
 control_models/
   panosamic/
-    PanoSAMic/
-    stanford2d3ds-vith-rgb-fold1/
-      model.safetensors
-    config_stanford2d3ds_dv.json
-    sam_vit_h_4b8939.pth
   moge/
-    MoGe/
-    moge-2-vitl-normal/
-      model.pt
   mmdetection/
-    configs/
-    mmdet/
-    panopticapi/
-    mask2former_swin-l-p4-w12-384-in21k_16xb1-lsj-100e_coco-panoptic.pth
 ```
 
-The current handoff package includes these assets so a teammate can debug geometric proxy generation without hunting for the old internal paths.
+The script is resumable and skips repositories and weights that already exist.
 
-Refresh or rebuild instructions are in:
+## Run
 
-```text
-handoff/control_environment_setup/
+`control_generation.py` uses this directory by default, so no additional model-root argument is required:
+
+```bash
+PYTHONPATH=code python -m panoworld_2d_generator.control_generation \
+  --white-model-panorama /path/to/panorama.png \
+  --output-dir /path/to/output \
+  --overwrite-assets \
+  --overwrite
 ```
 
-License notes:
-
-- PanoSAMic code/weights: CC BY-NC-SA 4.0.
-- SAM ViT-H: Apache-2.0.
-- MoGe: MIT, with DINOv2 components under Apache-2.0.
-- MMDetection and Mask2Former code: Apache-2.0; checkpoint from the OpenMMLab model zoo.
+The preparation script downloads code and weights only. Install the Python, PyTorch, MMCV, MMEngine, OpenCV, and CUDA dependencies separately for your platform.

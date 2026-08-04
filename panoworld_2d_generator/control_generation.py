@@ -653,8 +653,10 @@ class SingleImageControlGenerator:
         import torch
         import utils3d
         from moge.model.v2 import MoGeModel
-        from moge.utils.panorama import get_panorama_cameras, merge_panorama_normal, split_panorama_image
+        from moge.utils.panorama import get_panorama_cameras, split_panorama_image
         from moge.utils.vis import colorize_normal
+
+        from .models.control_models.panorama_normal import merge_panorama_normal
 
         model = MoGeModel.from_pretrained(str(require_path(paths.moge_model, "moge_model"))).to(torch.device(self.options.device)).eval()
         extrinsics, intrinsics = get_panorama_cameras()
@@ -706,6 +708,7 @@ class SingleImageControlGenerator:
         if panopticapi_root.exists():
             sys.path.insert(0, str(panopticapi_root))
         sys.path.insert(0, str(mmdet_root))
+
         from mmdet.apis import DetInferencer
 
         self._wall_inferencer = DetInferencer(
@@ -714,23 +717,18 @@ class SingleImageControlGenerator:
             device=self.options.device,
             show_progress=False,
         )
-        if hasattr(self._wall_inferencer, "model"):
-            self._wall_inferencer.model.float().eval()
         return self._wall_inferencer
 
     def generate_wall_mask(self, image_path: Path, output_path: Path) -> None:
         import cv2
         import numpy as np
-        import torch
 
         image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
         if image is None:
             raise FileNotFoundError(str(image_path))
         image = cv2.resize(image, self.options.infer_size)
         inferencer = self.load_wall_inferencer()
-        device_type = "cuda" if str(self.options.device).startswith("cuda") and torch.cuda.is_available() else "cpu"
-        with torch.autocast(device_type=device_type, enabled=False):
-            output = inferencer([image], batch_size=1, show=False)
+        output = inferencer([image], batch_size=1, show=False)
         prediction = output["predictions"][0]
         wall_mask = (prediction["panoptic_seg"][:, :, 0] == self.options.wall_id).astype(np.uint8) * 255
         output_path.parent.mkdir(parents=True, exist_ok=True)
