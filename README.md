@@ -148,7 +148,7 @@ bash scripts/visualize_panoworld.sh examples/full_pipeline_demo_datas/scene0000/
 The viewer starts a lightweight WebGL service for generated panoramas in a `viewpoints` directory. By default it binds to `0.0.0.0:8003`, enumerates the server's reachable hostnames/IP addresses, and prints browser URLs such as `http://<server-ip>:8003/`.
 
 ```bash
-PORT=8004 bash scripts/visualize_panoworld.sh /path/to/viewpoints
+PORT=8003 bash scripts/visualize_panoworld.sh /path/to/viewpoints
 ```
 
 If your platform provides a public hostname or proxy address, pass it explicitly so the printed URL is exact:
