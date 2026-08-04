@@ -96,6 +96,16 @@ The corresponding configs are `configs/train_lrm_1024_512.yaml` and `configs/tra
       transforms.json
 ```
 
+### Control Model Preparation
+
+2D Generator inference and full PanoWorld inference require geometric proxy images generated from shell-rendered panoramas. Before running either inference script, download the required public control-model code and checkpoints once:
+
+```bash
+bash panoworld_2d_generator/models/control_models/prepare_control_models.sh
+```
+
+The script downloads PanoSAMic, MoGe, MMDetection/panopticapi, and their required public checkpoints under `panoworld_2d_generator/models/control_models/`. LRM-only training/inference and 2D Generator LoRA training do not require this step.
+
 ### PanoWorld 2D Generator
 
 ```bash
@@ -103,7 +113,7 @@ DATA_ROOT=/path/to/front3d_train_data bash scripts/train_2d_generator.sh
 bash scripts/infer_2d_generator.sh
 ```
 
-The default 2D training manifest is `data_list/data_front3d/train_2d_generator.jsonl`. Because the manifest stores paths relative to the processed training-data root, set `DATA_ROOT` or `TRAIN_DATA_ROOT` before launching training. The default 2D inference manifest is `data_list/data_demo_data/inference_2d_generator.jsonl`, and outputs are written to `./outputs/2d_generator_demo`. Set `MANIFEST` and `OUTPUT_DIR` to override inference. The JSONL manifest format is documented in `panoworld_2d_generator/README.md`. The checkpoint-compatible condition order is:
+The default 2D training manifest is `data_list/data_front3d/train_2d_generator.jsonl`. Because the manifest stores paths relative to the processed training-data root, set `DATA_ROOT` or `TRAIN_DATA_ROOT` before launching training. The default 2D inference manifest is `data_list/data_demo_data/inference_2d_generator.jsonl`, and outputs are written to `./outputs/2d_generator_demo`. Set `MANIFEST` and `OUTPUT_DIR` to override inference. Run the control-model preparation step above before 2D inference when `geometric_proxy` inputs need to be generated from white-model panoramas. The JSONL manifest format is documented in `panoworld_2d_generator/README.md`. The checkpoint-compatible condition order is:
 
 ```text
 visual_memory, geometric_proxy, style_reference
@@ -129,7 +139,7 @@ shell `python`.
 bash scripts/infer_panoworld.sh
 ```
 
-`configs/inference_panoworld.yaml` enables `data.panoworld_mode=true` and directly connects LRM inference with the native 2D Generator. For each target node, the full pipeline prepares three image conditions for the 2D Generator:
+Run the control-model preparation step above before launching full PanoWorld inference. `configs/inference_panoworld.yaml` enables `data.panoworld_mode=true` and directly connects LRM inference with the native 2D Generator. For each target node, the full pipeline prepares three image conditions for the 2D Generator:
 
 You can switch between the three provided target styles by setting `data.panoworld_start_image` to `panoImage_2048_franch.png`, `panoImage_2048_simple.png`, or `panoImage_2048_chinese.png`. You can also use other image-to-image models to create additional start panoramas in new styles and use them as the first image for subsequent node generation.
 
