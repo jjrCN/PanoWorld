@@ -9,6 +9,9 @@ export PANOWORLD_ROOT
 if [[ -z "${PANOWORLD_PYTHON:-}" ]]; then
   if [[ -x "${PANOWORLD_ROOT}/.venv/bin/python" ]]; then
     PANOWORLD_PYTHON="${PANOWORLD_ROOT}/.venv/bin/python"
+  elif [[ -x "${PANOWORLD_ROOT}/.venv/Scripts/python.exe" ]]; then
+    # Windows venv layout (Git Bash)
+    PANOWORLD_PYTHON="${PANOWORLD_ROOT}/.venv/Scripts/python.exe"
   else
     PANOWORLD_PYTHON="$(command -v python)"
   fi
@@ -16,4 +19,4 @@ fi
 export PANOWORLD_PYTHON
 
 export PYTHONPATH="${PANOWORLD_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
-export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.0;9.0}"
+export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.0;9.0;12.0}"

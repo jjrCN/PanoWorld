@@ -1,0 +1,2 @@
+synthetic_scene_00415/map_eval.json
+synthetic_scene_00788/map_eval.json
